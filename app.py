@@ -517,9 +517,10 @@ def init_db():
         db.create_all()
         print("DATABASE READY ✔")
 
+# Initialize database
+init_db()
+
 if __name__ == "__main__":
-    init_db()
-    
     # Preload the model so the first prediction is fast
     load_alzheimer_model()
     
