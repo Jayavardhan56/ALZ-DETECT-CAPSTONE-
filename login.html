@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AlzDetect</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h1>AlzDetect</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/#about">About</a></li>
+                <li><a href="/#features">Features</a></li>
+                <li><a href="/#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="login-container">
+        <div class="login-wrapper">
+            <!-- Doctor Login -->
+            <div class="login-section doctor-section">
+                <h2>CLINICIAN</h2>
+                <h3>For Doctors and Researchers</h3>
+                <p>Access patient records, utilize the AI prediction tool, and view comprehensive reports for better diagnostics.</p>
+                
+                <form class="login-form" onsubmit="handleDoctorLogin(event)">
+                    <div class="form-group">
+                        <label for="doctor-email">Email</label>
+                        <input type="email" id="doctor-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="doctor-password">Password</label>
+                        <input type="password" id="doctor-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Doctor Login</button>
+                </form>
+
+                <p class="signup-text">Don't have an account?</p>
+                <a href="doctor_register.html" class="signup-link">Register for a Clinician Account</a>
+            </div>
+
+            <!-- Patient Login -->
+            <div class="login-section patient-section">
+                <h2>PATIENT</h2>
+                <h3>For Patients and Caregivers</h3>
+                <p>Manage your profile, view historical reports, see progress graphs, and access personalized suggestions.</p>
+                
+                <form class="login-form" onsubmit="handlePatientLogin(event)">
+                    <div class="form-group">
+                        <label for="patient-email">Email</label>
+                        <input type="email" id="patient-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-password">Password</label>
+                        <input type="password" id="patient-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Patient Login</button>
+                </form>
+
+                <p class="signup-text">Don't have an account?</p>
+                <a href="patient_register.html" class="signup-link">Sign Up now.</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/script.js"></script>
+</body>
+</html>

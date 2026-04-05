@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cognitive Assessment – AlzDetect</title>
+
+<style>
+/* ============================================
+GLOBAL THEME – Elder Friendly, Clean Colors
+============================================ */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #e6f2ef;
+    color: #00332f;
+}
+
+/* MAIN ASSESSMENT CARD */
+.container {
+    max-width: 850px;
+    width: 92%;
+    margin: 25px auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+}
+
+/* HEADINGS */
+h2 {
+    text-align: center;
+    font-size: 26px;
+    color: #004d40;
+    margin-bottom: 10px;
+}
+h3 {
+    font-size: 22px;
+    margin-top: 15px;
+}
+
+/* TIMER */
+#timer {
+    text-align: right;
+    font-size: 19px;
+    font-weight: bold;
+    color: #00796b;
+}
+
+/* PROGRESSBAR */
+.progress {
+    height: 10px;
+    background: #c8e6e4;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+.progress-fill {
+    height: 10px;
+    width: 0%;
+    background: #00897b;
+    transition: width 0.3s;
+}
+
+/* IMAGE FIX */
+.question-image {
+    width: 75%;
+    max-width: 350px;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border-radius: 12px;
+    background: #f6fcfc;
+    border: 1px solid #b2dfdb;
+    padding: 10px;
+    object-fit: contain;
+}
+
+/* RESPONSIVE IMAGE */
+@media(max-width: 480px) {
+    .question-image {
+        width: 90%;
+        max-width: 280px;
+    }
+}
+
+/* OPTION BUTTONS */
+.options button {
+    width: 100%;
+    font-size: 18px;
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 12px;
+    border: 2px solid #b2dfdb;
+    background: #eefcfa;
+    color: #003d33;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.options button:hover {
+    background: #dff7f2;
+}
+.selected-option {
+    background: #00897b !important;
+    color: white !important;
+    border: 2px solid #004d40 !important;
+    font-weight: bold;
+}
+
+/* TEXT INPUTS */
+textarea, input[type=text] {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    margin-top: 10px;
+    border-radius: 12px;
+    border: 2px solid #a7dcd5;
+}
+
+/* NEXT BUTTON */
+.btn-next {
+    display: block;
+    margin: 25px auto 0;
+    padding: 16px 24px;
+    background: #00796b;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn-next:hover {
+    background: #00594f;
+    transform: scale(1.05);
+}
+
+/* ZOOM + MINIMIZE */
+#zoomButton, #minimizeButton {
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    bottom: 25px;
+    border-radius: 50%;
+    background: #004d40;
+    color: white;
+    font-size: 28px;
+    line-height: 50px;
+    text-align: center;
+    z-index: 999;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+#zoomButton { right: 25px; }
+#minimizeButton { left: 25px; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>🧠 Cognitive Assessment (25 Questions)</h2>
+
+    <div class="progress"><div id="progressBar" class="progress-fill"></div></div>
+    <div id="timer">Time: 00:00</div>
+
+    <div id="questionContainer"></div>
+
+    <button class="btn-next" onclick="nextQuestion()" id="nextBtn">Next</button>
+
+    <div id="zoomButton" onclick="document.body.style.zoom=(parseFloat(getComputedStyle(document.body).zoom)+0.1)">+</div>
+    <div id="minimizeButton" onclick="document.body.style.zoom=(parseFloat(getComputedStyle(document.body).zoom)-0.1)">−</div>
+
+</div>
+
+<script>
+
+/* ============================================
+QUESTIONS
+============================================ */
+const questions = [
+    {id:1,type:"mcq",question:"What color is the sky on a clear day?",options:["Red","Blue","Green","Yellow"],answer:"Blue"},
+    {id:2,type:"mcq",question:"Which animal is known to bark?",options:["Cat","Bird","Dog","Fish"],answer:"Dog"},
+    {id:3,type:"mcq",question:"What animal is in this image?",image:"/static/assets/kangaroo.png",options:["Dog","Kangaroo","Elephant","Cat"],answer:"Kangaroo"},
+    {id:4,type:"mcq",question:"What object is shown here?",image:"/static/assets/ladder.png",options:["Ladder","Chair","Table","Car"],answer:"Ladder"},
+    {id:5,type:"mcq",question:"How many fingers do you have on one hand?",options:["3","4","5","6"],answer:"5"},
+    {id:6,type:"mcq",question:"Which of these is a fruit?",options:["Car","Apple","Chair","Table"],answer:"Apple"},
+    {id:7,type:"mcq",question:"What do you use to drink water?",options:["Knife","Spoon","Glass","Plate"],answer:"Glass"},
+
+    {id:8,type:"note",question:"Please memorize these 3 simple words: Apple, Dog, Car"},
+    {id:9,type:"text",question:"Type the 3 words you just saw in the previous step."},
+
+    {id:10,type:"mcq",question:"Which of the following is a number?",options:["A","B","7","Z"],answer:"7"},
+    {id:11,type:"mcq",question:"What is 2 + 2?",options:["2","3","4","5"],answer:"4"},
+
+    {id:12,type:"mcq",question:"What do you wear on your feet before going outside?",options:["Hat","Gloves","Shoes","Scarf"],answer:"Shoes"},
+    {id:13,type:"mcq",question:"Which of these is very hot?",options:["Snow","Ice","Sun","Water"],answer:"Sun"},
+    {id:14,type:"mcq",question:"Which animal is known to give us milk?",options:["Horse","Cow","Dog","Cat"],answer:"Cow"},
+
+    {id:15,type:"mcq",question:"What tool do we use to cut paper?",options:["Hammer","Scissors","Spoon","Pen"],answer:"Scissors"},
+    {id:16,type:"text",question:"Type or repeat this short sentence: 'Dogs are good pets.'"},
+    {id:17,type:"mcq",question:"How many days are in a week?",options:["5","6","7","8"],answer:"7"},
+
+    {id:18,type:"mcq",question:"The opposite of 'Day' is?",options:["Morning","Night","Afternoon","Sun"],answer:"Night"},
+    {id:19,type:"mcq",question:"Where do we normally sleep?",options:["Table","Chair","Bed","Floor"],answer:"Bed"},
+    {id:20,type:"mcq",question:"Where do birds mostly fly?",options:["Water","Ground","House","Sky"],answer:"Sky"},
+
+    {id:21,type:"text",question:"Try to recall the 3 words you memorized earlier."},
+    {id:22,type:"mcq",question:"Which word was in your memory list?",options:["Banana","Apple","Cat","House"],answer:"Apple"},
+
+    {id:23,type:"text",question:"Type the names of 2 animals you know."},
+    {id:24,type:"text",question:"What is the current year?"},
+    {id:25,type:"text",question:"What city or town are you in right now?"}
+];
+
+/* STATE */
+let current = 0;
+let score = 0;
+let answers = {};
+let selected = null;
+let start = Date.now();
+let zoomLevel = 1;
+
+/* TIMER */
+setInterval(()=>{
+    let t = Date.now() - start;
+    let m = Math.floor(t/60000);
+    let s = Math.floor((t%60000)/1000);
+    document.getElementById("timer").innerHTML = 
+        `Time: ${m}:${s.toString().padStart(2,'0')}`;
+},1000);
+
+/* LOAD QUESTION */
+function loadQuestion() {
+    let q = questions[current];
+    let html = `<h3>Q${current+1}. ${q.question}</h3>`;
+
+    if(q.image){
+        html += `<img class="question-image" 
+                 src="${q.image}" 
+                 onerror="this.style.display='none'">`;
+    }
+
+    if(q.audio){
+        html += `<audio controls>
+                   <source src="${q.audio}" type="audio/mpeg">
+                 </audio>`;
+    }
+
+    if(q.options){
+        html += `<div class="options">`;
+        q.options.forEach(o=>{
+            html += `<button onclick="selectOption(this,'${o}')">${o}</button>`;
+        });
+        html += `</div>`;
+    }
+
+    if(q.type==="text"){
+        html += `<textarea id="textAns" placeholder="Type answer..."></textarea>`;
+    }
+
+    document.getElementById("questionContainer").innerHTML = html;
+    updateProgress();
+}
+
+/* SELECT OPTION */
+function selectOption(btn,val){
+    selected = val;
+    document.querySelectorAll(".options button")
+        .forEach(b=>b.classList.remove("selected-option"));
+    btn.classList.add("selected-option");
+}
+
+/* NEXT */
+function nextQuestion(){
+    let q = questions[current];
+
+    if(q.options && selected != null){
+        answers[q.id] = selected;
+        if(selected === q.answer) score++;
+    }
+
+    if(q.type==="text"){
+        let txt = document.getElementById("textAns")?.value.trim();
+        answers[q.id] = txt;
+    }
+
+    selected = null;
+    current++;
+
+    if(current >= questions.length){
+        submitTest();
+        return;
+    }
+    loadQuestion();
+}
+
+/* PROGRESS */
+function updateProgress(){
+    let percent = ((current+1)/questions.length)*100;
+    document.getElementById("progressBar").style.width = percent + "%";
+}
+
+/* ZOOM CONTROLS */
+document.getElementById("zoomButton").onclick = function(){
+    zoomLevel += 0.1;
+    document.body.style.transform = `scale(${zoomLevel})`;
+    document.body.style.transformOrigin = "top center";
+};
+
+document.getElementById("minimizeButton").onclick = function(){
+    if(zoomLevel > 0.6){
+        zoomLevel -= 0.1;
+        document.body.style.transform = `scale(${zoomLevel})`;
+        document.body.style.transformOrigin = "top center";
+    }
+};
+
+/* SUBMIT */
+async function submitTest(){
+    let payload = {
+        total_score: score,
+        answers: answers
+    };
+
+    await fetch("/api/cognitive/submit",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+    });
+
+    document.getElementById("questionContainer").innerHTML =
+    `<h2>✔ Test Completed</h2>
+     <p>Your responses have been securely submitted.</p>
+     <div style="text-align:center; margin-top:30px;">
+        <button class="btn-next" style="display:inline-block; margin:0;" onclick="window.location.href='patient_dashboard.html'">Return to Dashboard</button>
+     </div>`;
+    document.getElementById("nextBtn").style.display="none";
+}
+
+loadQuestion();
+
+</script>
+
+</body>
+</html>

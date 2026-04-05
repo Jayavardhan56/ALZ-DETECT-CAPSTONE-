@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Registration - AlzDetect</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h1>AlzDetect</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="register-container">
+        <div class="register-wrapper">
+            <h1>Doctor/Clinician Registration</h1>
+            <p style="text-align: center; color: #757575; margin-bottom: 30px;">Create your professional account</p>
+
+            <form class="register-form" onsubmit="handleDoctorRegister(event)">
+                <!-- Common Fields -->
+                <div class="form-group">
+                    <label for="fullname">Full Name</label>
+                    <input type="text" id="fullname" name="fullname" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirm_password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+
+                <!-- Doctor Specific Fields -->
+                <div class="form-group">
+                    <label for="license">Medical License Number</label>
+                    <input type="text" id="license" name="license" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="specialization">Specialization</label>
+                    <input type="text" id="specialization" name="specialization" placeholder="e.g., Neurology" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="hospital">Hospital/Clinic Name</label>
+                    <input type="text" id="hospital" name="hospital" required>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary btn-block">Create Doctor Account</button>
+
+                <!-- Login Link -->
+                <p class="login-text">Already have an account? <a href="login.html">Login here</a></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="static/js/script.js"></script>
+</body>
+</html>

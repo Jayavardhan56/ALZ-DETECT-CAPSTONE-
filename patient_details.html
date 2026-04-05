@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Details - AlzDetect</title>
+<link rel="stylesheet" href="static/css/style.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- HTML2PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+:root {
+    --dark: #004d40;
+    --light: #00897b;
+    --bg: #f5f8f8;
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --border-color: #e0e6e5;
+}
+
+body { margin:0; background:var(--bg); font-family:'Inter', Arial, sans-serif; color:#333; }
+.sidebar {
+    width: 240px; height: 100vh;
+    background: var(--dark);
+    position: fixed; left: 0; top: 0;
+    padding-top: 25px; color: white;
+    transition: 0.3s;
+    z-index: 999;
+}
+.sidebar.hidden { left: -260px; }
+.sidebar a {
+    display:block; padding:14px 25px;
+    color:white; text-decoration:none;
+}
+.sidebar a:hover { background: var(--light); }
+
+.toggle-btn {
+    position: fixed; left:20px; top:20px;
+    background: var(--dark); color:white;
+    padding:10px 15px; border-radius:6px;
+    cursor:pointer;
+}
+
+.main { margin-left:260px; padding:40px; transition:0.3s; }
+.main.full { margin-left:0px; }
+
+h1 { color: var(--dark); margin-top: 0; }
+
+.card {
+    background:white;
+    padding:30px;
+    border-radius:16px;
+    margin-bottom:25px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
+}
+.card h2 { margin-top:0; color:var(--dark); font-weight: 600; border-bottom: 2px solid #f0f4f4; padding-bottom:12px; margin-bottom: 20px;}
+
+.mri-img {
+    width:200px; height:200px;
+    object-fit:cover;
+    border-radius:12px;
+    border:1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.btn-primary {
+    background: var(--light);
+    border:none;
+    padding:12px 24px;
+    color:white;
+    font-weight:600;
+    border-radius:8px;
+    cursor:pointer;
+    transition: all 0.2s;
+}
+.btn-primary:hover { 
+    background:#00796b; 
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,121,107,0.3);
+}
+
+textarea, input[type="file"] {
+    width:100%;
+    padding:14px;
+    border-radius:8px;
+    border:1px solid #d1d5db;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--light);
+    box-shadow: 0 0 0 3px rgba(0,137,123,0.15);
+}
+textarea { height:150px; margin-bottom: 15px; }
+.patient-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    align-items: start;
+}
+
+.mri-history-item {
+    background: #f9fbfb;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+.mri-history-info {
+    flex: 1;
+    min-width: 200px;
+}
+.mri-history-info p { margin: 5px 0; font-size: 15px; }
+.mri-history-info strong { color: var(--dark); display: inline-block; width: 100px; }
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar" id="sidebar">
+    <h2 style="text-align:center; margin-bottom: 30px;">Doctor Panel</h2>
+    <a href="doctor_dashboard.html">🏠 Dashboard</a>
+    <a href="patients_list.html">🧑‍⚕ Manage Patients</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="toggle-btn" onclick="toggleSidebar()">☰</div>
+
+<div class="main" id="main">
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 id="patient-name">Patient Details</h1>
+    <button class="btn-primary" onclick="generatePDFReport()" style="background:#26a69a; display:flex; align-items:center; gap:8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download PDF Report
+    </button>
+</div>
+
+<div class="patient-grid">
+    <!-- Patient Profile -->
+    <div class="card" style="margin-bottom:0;">
+        <h2>Patient Profile</h2>
+        <div id="patient-info" style="line-height:1.8; font-size:15px;">Loading...</div>
+    </div>
+
+    <!-- MoCA -->
+    <div class="card" style="margin-bottom:0;">
+        <h2>Latest MoCA Result</h2>
+        <div id="moca-history" style="line-height:1.8; font-size:15px;">Loading MoCA data...</div>
+        
+        <div id="severity-card" style="display:none; margin-top: 15px; padding: 15px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="font-size:14px; color:#666; text-transform:uppercase; font-weight:600; margin-bottom:5px;">Dementia Severity</div>
+            <div id="severity-text" style="font-weight:bold; font-size:18px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MRI Upload -->
+<div class="card">
+    <h2>Upload MRI</h2>
+    <input type="file" id="mri-file" accept="image/*">
+    <button class="btn-primary" onclick="uploadMRI()">Upload & Predict</button>
+
+    <div id="upload-loading" style="color:green; display:none; margin-top:10px;">
+        🟢 Uploading & Predicting...
+    </div>
+
+    <div id="upload-result" style="display:none; margin-top:15px; color:#00796b; font-weight:bold;">
+        ✅ Prediction Complete! Refreshing history...
+    </div>
+</div>
+
+<!-- MRI History -->
+<div class="card">
+    <h2>MRI Scan History</h2>
+    <div id="mri-list">Loading MRI data...</div>
+</div>
+
+<!-- Prescription -->
+<div class="card">
+    <h2>Doctor Prescription & Notes</h2>
+    <textarea id="prescription-box" placeholder="Enter patient prescription, assessment notes, or recommended treatment plans here..."></textarea>
+    <button class="btn-primary" onclick="savePrescription()">Save Notes</button>
+    <div id="save-status" style="color:#00796b; background:#e0f2f1; padding: 10px 15px; border-radius:6px; display:none; margin-top:15px; font-weight: 500; font-size: 14px; border: 1px solid #b2dfdb; transition: opacity 0.3s ease;">
+        ✓ Prescription Saved Successfully
+    </div>
+</div>
+
+</div>
+
+<!-- HIDDEN PDF REPORT TEMPLATE -->
+<div id="pdf-report-container" style="display: none;">
+    <div id="report-content" style="padding: 40px; font-family: 'Inter', Arial, sans-serif; color: #333; background: white;">
+        <!-- Header -->
+        <div style="border-bottom: 2px solid #004d40; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h1 style="color: #004d40; margin: 0; font-size: 28px;">AlzDetect Medical Report</h1>
+                <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">AI-Assisted Dementia Screening</p>
+            </div>
+            <div style="text-align: right; color: #555; font-size: 13px;">
+                <p style="margin: 0;">Date: <span id="pdf-date"></span></p>
+            </div>
+        </div>
+
+        <!-- Demographics -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 18px; color: #00897b; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Patient Information</h2>
+            <div id="pdf-patient-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; margin-top: 15px;">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+
+        <!-- Cognitive -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 18px; color: #00897b; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Cognitive Assessment (MoCA)</h2>
+            <div id="pdf-moca-info" style="font-size: 14px; margin-top: 15px; padding: 15px; background: #f9fbfb; border: 1px solid #e0e6e5; border-radius: 8px;">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+
+        <!-- MRI -->
+        <div style="margin-bottom: 30px; page-break-inside: avoid;">
+            <h2 style="font-size: 18px; color: #00897b; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Neurological Imaging (MRI)</h2>
+            <div id="pdf-mri-info" style="font-size: 14px; margin-top: 15px;">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div style="margin-bottom: 30px; page-break-inside: avoid;">
+            <h2 style="font-size: 18px; color: #00897b; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Clinical Notes & Plan</h2>
+            <div id="pdf-notes-info" style="font-size: 14px; margin-top: 15px; padding: 15px; background: #fffcf0; border: 1px solid #f2e6b6; border-radius: 8px; white-space: pre-wrap;">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 11px;">
+            <p>This report was generated by the AlzDetect platform for clinical decision support.</p>
+            <p>AI predictions should be verified by a qualified medical professional.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+
+function toggleSidebar(){
+    document.getElementById("sidebar").classList.toggle("hidden");
+    document.getElementById("main").classList.toggle("full");
+}
+
+function getPatientId(){
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+}
+
+async function loadPatientDetails(){
+    const id = getPatientId();
+    const res = await fetch(`/api/doctor/patient/${id}`);
+    const data = await res.json();
+
+    if(!data.success){
+        alert("Failed to load patient.");
+        return;
+    }
+
+    const p = data.patient;
+    document.getElementById("patient-name").innerText = p.fullname;
+
+    document.getElementById("patient-info").innerHTML = 
+        "<b>Name:</b> " + p.fullname + "<br>" +
+        "<b>Email:</b> " + p.email + "<br>" +
+        "<b>Age:</b> " + p.age + "<br>" +
+        "<b>Gender:</b> " + p.gender + "<br>" +
+        "<b>Phone:</b> " + p.phone;
+        
+    // --- Populate PDF Demographics ---
+    const today = new Date().toLocaleDateString();
+    document.getElementById("pdf-date").innerText = today;
+    
+    document.getElementById("pdf-patient-info").innerHTML = 
+        "<div><b>Patient Name:</b> " + p.fullname + "</div>" +
+        "<div><b>Age/Gender:</b> " + p.age + " / " + p.gender + "</div>" +
+        "<div><b>Email Contact:</b> " + p.email + "</div>" +
+        "<div><b>Phone Number:</b> " + p.phone + "</div>";
+    // ---------------------------------
+
+    // MRI History
+    const mriBox = document.getElementById("mri-list");
+    const pdfMriBox = document.getElementById("pdf-mri-info");
+
+    if(!data.mri_list || data.mri_list.length === 0){
+        mriBox.innerHTML = "No MRI scans uploaded.";
+        pdfMriBox.innerHTML = "No MRI scans available for this patient.";
+    } else {
+        mriBox.innerHTML = data.mri_list.map(s => 
+            "<div class='mri-history-item'>" +
+                "<div style='display:flex; gap:15px; flex-wrap:wrap;'>" +
+                    "<div style='text-align:center;'>" +
+                        "<img src='/static/uploads/" + s.filename + "' class='mri-img'>" +
+                        "<p style='font-size:12px;color:#666;margin:5px 0 0 0;'>Original MRI</p>" +
+                    "</div>" +
+                    "<div style='text-align:center;'>" +
+                        "<img src='/static/uploads/cam_" + s.filename + "' class='mri-img' onerror=\"this.parentElement.style.display='none';\">" +
+                        "<p style='font-size:12px;color:#666;margin:5px 0 0 0;'>Grad-CAM (Explainable AI)</p>" +
+                    "</div>" +
+                "</div>" +
+                "<div class='mri-history-info'>" +
+                    "<p><strong>Prediction:</strong> " + s.prediction + "</p>" +
+                    "<p><strong>Date:</strong> " + s.created_at + "</p>" +
+                    "<button class='btn-primary' style='background:#ef5350; margin-top:10px; padding:8px 16px; font-size:13px; border-radius:6px;' onclick='deleteMRI(" + s.id + ")'>Delete Record</button>" +
+                "</div>" +
+            "</div>"
+        ).join("");
+        
+        // Populate PDF with LATEST MRI only
+        const latestMri = data.mri_list[0];
+        pdfMriBox.innerHTML = 
+            "<div style='margin-bottom:15px; font-weight:600;'>Scan Date: " + latestMri.created_at + "</div>" +
+            "<div style='display:flex; gap:20px; align-items:flex-start;'>" +
+                "<div style='text-align:center;'>" +
+                    "<img src='/static/uploads/" + latestMri.filename + "' style='width:180px;height:180px;object-fit:cover;border-radius:10px;border:1px solid #ddd'>" +
+                    "<p style='font-size:12px;color:#666;margin:5px 0 0 0;'>Original Reference</p>" +
+                "</div>" +
+                "<div style='text-align:center;'>" +
+                    "<img src='/static/uploads/cam_" + latestMri.filename + "' style='width:180px;height:180px;object-fit:cover;border-radius:10px;border:1px solid #ddd' onerror=\"this.parentElement.style.display='none';\">" +
+                    "<p style='font-size:12px;color:#666;margin:5px 0 0 0;'>Grad-CAM Evaluation</p>" +
+                "</div>" +
+            "</div>" +
+            "<div style='margin-top:20px; padding:15px; background:#f0f8ff; border:1px solid #cce5ff; border-radius:8px;'>" +
+                "<p style='margin:0;'><b>DenseNet Prediction:</b> " + latestMri.prediction + "</p>" +
+            "</div>";
+    }
+
+    // MoCA
+    const mocaBox = document.getElementById("moca-history");
+    const pdfMocaBox = document.getElementById("pdf-moca-info");
+
+    if(!data.latest_moca){
+        mocaBox.innerHTML = "No MoCA test available.";
+        pdfMocaBox.innerHTML = "No recent cognitive test data available.";
+    } else {
+        const m = data.latest_moca;
+
+        mocaBox.innerHTML = 
+            "<b>Total Score:</b> " + m.total_score + "/30<br>" +
+            "<b>Severity:</b> " + m.severity + "<br>" +
+            "<b>Date:</b> " + m.created_at;
+
+        document.getElementById("severity-card").style.display="block";
+
+        let color="green";
+        if(m.severity==="Mild Cognitive Impairment") color="orange";
+        if(m.severity==="Moderate Dementia") color="red";
+        if(m.severity==="Severe Dementia") color="darkred";
+
+        document.getElementById("severity-text").innerHTML =
+            "<span style='color:" + color + "'>" + m.severity + "</span>";
+            
+        // Populate PDF
+        pdfMocaBox.innerHTML = 
+            "<p style='margin:0 0 8px 0;'><b>Total Assessment Score:</b> " + m.total_score + " / 30</p>" +
+            "<p style='margin:0 0 8px 0;'><b>Clinical Severity:</b> <span style='font-weight:600; color:" + color + "'>" + m.severity + "</span></p>" +
+            "<p style='margin:0;'><b>Test Date:</b> " + m.created_at + "</p>";
+    }
+
+    if(data.prescription){
+        document.getElementById("prescription-box").value =
+            data.prescription.notes;
+        document.getElementById("pdf-notes-info").innerText = 
+            data.prescription.notes;
+    } else {
+        document.getElementById("pdf-notes-info").innerText = "No clinical notes provided yet.";
+    }
+}
+
+async function generatePDFReport() {
+    const patientName = document.getElementById("patient-name").innerText.replace("Patient Details", "").trim() || "Patient";
+    const element = document.getElementById('report-content');
+    const container = document.getElementById('pdf-report-container');
+    
+    // Temporarily show container so html2pdf can read heights and render properly
+    container.style.display = "block";
+    
+    const opt = {
+      margin:       0,
+      filename:     patientName.replace(/ /g, "_") + '_Medical_Report.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    // Save PDF
+    await html2pdf().set(opt).from(element).save();
+    
+    // Hide container again
+    container.style.display = "none";
+}
+
+async function uploadMRI(){
+    const id = getPatientId();
+    const file = document.getElementById("mri-file").files[0];
+    if(!file){ alert("Select MRI image"); return; }
+
+    document.getElementById("upload-loading").style.display="block";
+
+    let fd = new FormData();
+    fd.append("mri", file);
+
+    try {
+        const res = await fetch("/api/doctor/upload-mri/" + id, {
+            method:"POST",
+            body: fd
+        });
+
+        const data = await res.json();
+        document.getElementById("upload-loading").style.display="none";
+
+        if(data.success){
+            document.getElementById("upload-result").style.display="block";
+            document.getElementById("mri-file").value = ""; // Clear file input
+            loadPatientDetails();
+            setTimeout(() => {
+                document.getElementById("upload-result").style.display="none";
+            }, 3000);
+        } else {
+            alert(data.message || "Upload failed");
+        }
+    } catch (error) {
+        document.getElementById("upload-loading").style.display="none";
+        alert("An error occurred during upload. Please try again.");
+    }
+}
+
+async function deleteMRI(mriId) {
+    if(!confirm("Are you sure you want to delete this MRI record?")) return;
+    
+    try {
+        const res = await fetch("/api/doctor/delete-mri/" + mriId, {
+            method: "DELETE"
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            loadPatientDetails(); // Reload the history section
+        } else {
+            alert(data.message || "Failed to delete MRI");
+        }
+    } catch (err) {
+        console.error("Error deleting MRI:", err);
+        alert("An error occurred while deleting the MRI.");
+    }
+}
+
+async function savePrescription(){
+    const id = getPatientId();
+    const notes = document.getElementById("prescription-box").value;
+
+    const res = await fetch("/api/doctor/prescription/" + id, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({notes})
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+        document.getElementById("save-status").style.display="block";
+        loadPatientDetails();
+        setTimeout(()=>{
+            document.getElementById("save-status").style.display="none";
+        },1500);
+    }
+}
+
+function logout(){
+    fetch("/api/logout",{method:"POST"})
+    .then(()=>location.href="login.html");
+}
+
+window.onload = loadPatientDetails;
+
+</script>
+</body>
+</html>

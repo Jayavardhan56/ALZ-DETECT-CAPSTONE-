@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.keras
+*.h5
+uploads/
+.venv/

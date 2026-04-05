@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patients - AlzDetect</title>
+<link rel="stylesheet" href="static/css/style.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --dark: #004d40;
+    --light: #00897b;
+    --bg: #f5f8f8;
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --border-color: #e0e6e5;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    font-family: 'Inter', Arial, sans-serif;
+    color: #333;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: var(--dark);
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding-top: 25px;
+    color: white;
+    transition: 0.3s;
+    z-index: 999;
+}
+.sidebar.hidden { left: -260px; }
+.sidebar h2 { text-align: center; margin-bottom: 30px; }
+.sidebar a {
+    display: block;
+    padding: 14px 25px;
+    color: white;
+    text-decoration: none;
+}
+.sidebar a:hover { background: var(--light); }
+
+/* Toggle */
+.toggle-btn {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    background: var(--dark);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+/* Main */
+.main {
+    margin-left: 260px;
+    padding: 40px;
+    transition: 0.3s;
+}
+.main.full { margin-left: 0px; }
+
+.header {
+    background: linear-gradient(135deg, var(--dark), var(--light));
+    padding: 35px 30px;
+    color: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,77,64,0.15);
+}
+
+.header h1 {
+    margin-top: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+.header p {
+    margin-bottom: 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    margin-top: 25px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
+}
+
+.patient-item {
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+.patient-item:hover {
+    background: #f4faf9;
+    border-color: var(--light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,137,123,0.1);
+}
+.patient-item-info {
+    flex: 1;
+}
+.patient-item-info strong {
+    font-size: 16px;
+    color: #222;
+}
+.patient-item-info span {
+    font-size: 14px;
+    color: #777;
+    margin-top: 4px;
+    display: block;
+}
+.patient-item::after {
+    content: "➔";
+    color: var(--light);
+    font-size: 18px;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.2s ease;
+}
+.patient-item:hover::after {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.search-box {
+    padding: 14px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin-bottom: 20px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+.search-box:focus {
+    outline: none;
+    border-color: var(--light);
+    box-shadow: 0 0 0 3px rgba(0,137,123,0.15);
+}
+
+.empty-state {
+    text-align: center;
+    color: #777;
+    padding: 30px;
+    font-size: 15px;
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <h2 style="margin-bottom: 30px;">Doctor Panel</h2>
+    <a href="doctor_dashboard.html">🏠 Dashboard</a>
+    <a href="patients_list.html">🧑‍⚕ Manage Patients</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<!-- TOGGLE -->
+<div class="toggle-btn" onclick="toggleSidebar()">☰</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+    <div class="header">
+        <h1>Patient List</h1>
+        <p>Select a patient to view MRI & MoCA history.</p>
+    </div>
+
+    <div class="card">
+        <input type="text"
+               class="search-box"
+               id="search"
+               placeholder="Search patient by name or email..."
+               onkeyup="filterPatients()">
+
+        <div id="patients-container">
+            <div class="empty-state">Loading patients...</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+/* Sidebar toggle */
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("hidden");
+    document.getElementById("main").classList.toggle("full");
+}
+
+/* Load patients from backend */
+async function loadPatients() {
+    try {
+        const res = await fetch("/api/doctor/patients");
+
+        if (res.status === 401) {
+            return window.location.href = "login.html";
+        }
+
+        const data = await res.json();
+
+        if (!data.success) {
+            return window.location.href = "login.html";
+        }
+
+        const box = document.getElementById("patients-container");
+        box.innerHTML = "";
+
+        if (!data.patients || data.patients.length === 0) {
+            box.innerHTML =
+                `<div class="empty-state">
+                    No patients registered yet.
+                 </div>`;
+            return;
+        }
+
+        data.patients.forEach(p => {
+
+            const div = document.createElement("div");
+            div.className = "patient-item";
+            div.dataset.name = (p.fullname || "").toLowerCase();
+            div.dataset.email = (p.email || "").toLowerCase();
+
+            div.innerHTML = `
+                <div class="patient-item-info">
+                    <strong>${p.fullname}</strong>
+                    <span>${p.email} | Age: ${p.age} | ${p.gender}</span>
+                </div>
+            `;
+
+            div.onclick = () => openPatient(p.id);
+            box.appendChild(div);
+        });
+
+    } catch (err) {
+        document.getElementById("patients-container").innerHTML =
+            `<div class="empty-state">
+                Failed to load patients.
+             </div>`;
+    }
+}
+
+/* Open patient details */
+function openPatient(id) {
+    window.location.href = `patient_details.html?id=${id}`;
+}
+
+/* Search filter */
+function filterPatients() {
+    const q = document.getElementById("search").value.toLowerCase();
+    const patients = document.querySelectorAll(".patient-item");
+
+    patients.forEach(p => {
+        const name = p.dataset.name;
+        const email = p.dataset.email;
+
+        if (name.includes(q) || email.includes(q)) {
+            p.style.display = "block";
+        } else {
+            p.style.display = "none";
+        }
+    });
+}
+
+/* Logout */
+function logout() {
+    fetch("/api/logout", { method: "POST" })
+        .then(() => window.location.href = "login.html");
+}
+
+window.onload = loadPatients;
+
+</script>
+
+</body>
+</html>
