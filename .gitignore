@@ -1,6 +1,7 @@
 .env
 __pycache__/
-*.keras
+# Ignore Large Model Files
+# *.keras (Commented out so Render can read it. GitHub will give a warning but won't block since it's < 100MB)
 *.h5
 uploads/
 .venv/

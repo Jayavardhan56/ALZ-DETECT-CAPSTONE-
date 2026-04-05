@@ -2,9 +2,9 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Werkzeug==3.0.1
 python-dotenv==1.0.1
-tensorflow        # remove ==2.10.0
+tensorflow
 Pillow==10.4.0
-opencv-python==4.8.1.78
-numpy             # let it pick what TF needs
-#scikit-image==0.21.0
-keras             # let TF bring its matching Keras
+opencv-python-headless==4.8.1.78
+numpy
+keras
+gunicorn==21.2.0
